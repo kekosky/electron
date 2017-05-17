@@ -1469,9 +1469,6 @@ describe('BrowserWindow module', function () {
         onNextHiddenEvent(() => {
           done(new Error('Unexpected visibility change event to hidden'))
         })
-        ipcMain.on('pong', function (event, visibilityState, hidden) {
-          done(new Error('Visibli'))
-        })
 
         w.once('show', () => {
           w.once('hide', () => {
