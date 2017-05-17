@@ -41,6 +41,7 @@
 #include "atom/common/native_mate_converters/string16_converter.h"
 #include "atom/common/native_mate_converters/value_converter.h"
 #include "atom/common/options_switches.h"
+#include "base/process/process_handle.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/threading/thread_task_runner_handle.h"
 #include "brightray/browser/inspectable_web_contents.h"
@@ -1007,6 +1008,11 @@ int WebContents::GetProcessID() const {
   return web_contents()->GetRenderProcessHost()->GetID();
 }
 
+base::ProcessId WebContents::GetOSProcessID() const {
+  auto process_handle = web_contents()->GetRenderProcessHost()->GetHandle();
+  return base::GetProcId(process_handle);
+}
+
 WebContents::Type WebContents::GetType() const {
   return type_;
 }
@@ -1654,6 +1660,18 @@ void WebContents::Invalidate() {
   }
 }
 
+gfx::Size WebContents::GetSizeForNewRenderView(
+    content::WebContents* wc) const {
+  if (IsOffScreen() && wc == web_contents()) {
+    auto relay = NativeWindowRelay::FromWebContents(web_contents());
+    if (relay) {
+      return relay->window->GetSize();
+    }
+  }
+
+  return gfx::Size();
+}
+
 void WebContents::SetZoomLevel(double level) {
   zoom_controller_->SetZoomLevel(level);
 }
@@ -1754,6 +1772,7 @@ void WebContents::BuildPrototype(v8::Isolate* isolate,
       .MakeDestroyable()
       .SetMethod("getId", &WebContents::GetID)
       .SetMethod("getProcessId", &WebContents::GetProcessID)
+      .SetMethod("getOSProcessId", &WebContents::GetOSProcessID)
       .SetMethod("equal", &WebContents::Equal)
       .SetMethod("_loadURL", &WebContents::LoadURL)
       .SetMethod("downloadURL", &WebContents::DownloadURL)

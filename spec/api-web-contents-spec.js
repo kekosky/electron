@@ -324,6 +324,17 @@ describe('webContents module', function () {
     })
   })
 
+  describe('getOSProcessId()', function () {
+    it('returns a valid procress id', function () {
+      assert.strictEqual(w.webContents.getOSProcessId(), 0)
+
+      w.loadURL('about:blank')
+      const pid = w.webContents.getOSProcessId()
+      assert(typeof pid === 'number', 'is a number')
+      assert(pid > 0, 'superior to 0')
+    })
+  })
+
   describe('zoom api', () => {
     const zoomScheme = remote.getGlobal('zoomScheme')
     const hostZoomMap = {

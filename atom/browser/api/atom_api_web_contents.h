@@ -83,6 +83,7 @@ class WebContents : public mate::TrackableObject<WebContents>,
 
   int64_t GetID() const;
   int GetProcessID() const;
+  base::ProcessId GetOSProcessID() const;
   Type GetType() const;
   bool Equal(const WebContents* web_contents) const;
   void LoadURL(const GURL& url, const mate::Dictionary& options);
@@ -184,6 +185,7 @@ class WebContents : public mate::TrackableObject<WebContents>,
   void SetFrameRate(int frame_rate);
   int GetFrameRate() const;
   void Invalidate();
+  gfx::Size GetSizeForNewRenderView(content::WebContents*) const override;
 
   // Methods for zoom handling.
   void SetZoomLevel(double level);
