@@ -1388,6 +1388,22 @@ describe('BrowserWindow module', function () {
       ipcMain.removeAllListeners('pong')
     })
 
+    function onNextVisibleEvent (callback) {
+      ipcMain.once('pong', (event, visibilityState, hidden) => {
+        assert.equal(visibilityState, 'visible')
+        assert.equal(hidden, false)
+        callback()
+      })
+    }
+
+    function onNextHiddenEvent (callback) {
+      ipcMain.once('pong', (event, visibilityState, hidden) => {
+        assert.equal(visibilityState, 'hidden')
+        assert.equal(hidden, true)
+        callback()
+      })
+    }
+
     it('visibilityState is initially visible despite window being hidden', function (done) {
       w.destroy()
       w = new BrowserWindow({ show: false, width: 100, height: 100 })
@@ -1420,34 +1436,16 @@ describe('BrowserWindow module', function () {
         height: 100
       })
 
-      let expectingVisible = true
-      ipcMain.once('pong', function (event, visibilityState, hidden) {
-        assert.equal(visibilityState, 'visible')
-        assert.equal(hidden, false)
-
-        ipcMain.on('pong', function (event, visibilityState, hidden) {
-          assert.equal(visibilityState, expectingVisible ? 'visible' : 'hidden')
-          assert.equal(hidden, !expectingVisible)
+      onNextVisibleEvent(() => {
+        onNextHiddenEvent(() => {
+          onNextVisibleEvent(() => {
+            onNextHiddenEvent(done)
+            w.minimize()
+          })
+          w.show()
+          w.focus()
         })
-
-        setTimeout(() => {
-          expectingVisible = false
-          w.hide()
-
-          setTimeout(() => {
-            expectingVisible = true
-            w.show()
-
-            setTimeout(() => {
-              expectingVisible = false
-              w.minimize()
-
-              setTimeout(() => {
-                done()
-              }, 500)
-            }, 500)
-          }, 500)
-        }, 500)
+        w.hide()
       })
 
       w.loadURL('file://' + path.join(fixtures, 'pages', 'visibilitychange.html'))
@@ -1464,29 +1462,27 @@ describe('BrowserWindow module', function () {
         }
       })
 
-      ipcMain.once('pong', function (event, visibilityState, hidden) {
-        assert.equal(visibilityState, 'visible')
-        assert.equal(hidden, false)
-
+      onNextVisibleEvent(() => {
+        onNextVisibleEvent(() => {
+          done(new Error('Unexpected visibility change event to visible'))
+        })
+        onNextHiddenEvent(() => {
+          done(new Error('Unexpected visibility change event to hidden'))
+        })
         ipcMain.on('pong', function (event, visibilityState, hidden) {
-          assert.ok(false)
+          done(new Error('Visibli'))
         })
 
-        setTimeout(() => {
-          w.show()
-
-          setTimeout(() => {
-            w.hide()
-
-            setTimeout(() => {
-              w.show()
-
-              setTimeout(() => {
-                done()
-              }, 500)
-            }, 500)
-          }, 500)
-        }, 500)
+        w.once('show', () => {
+          w.once('hide', () => {
+            w.once('show', () => {
+              done()
+            })
+            w.show()
+          })
+          w.hide()
+        })
+        w.show()
       })
 
       w.loadURL('file://' + path.join(fixtures, 'pages', 'visibilitychange.html'))
