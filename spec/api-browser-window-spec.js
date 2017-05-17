@@ -1389,18 +1389,20 @@ describe('BrowserWindow module', function () {
     })
 
     function onNextVisibleEvent (callback) {
-      ipcMain.once('pong', (event, visibilityState, hidden) => {
-        assert.equal(visibilityState, 'visible')
-        assert.equal(hidden, false)
-        callback()
+      ipcMain.on('pong', function listener (event, visibilityState, hidden) {
+        if (visibilityState === 'visible' && hidden === false) {
+          ipcMain.removeListener('pong', listener)
+          callback()
+        }
       })
     }
 
     function onNextHiddenEvent (callback) {
-      ipcMain.once('pong', (event, visibilityState, hidden) => {
-        assert.equal(visibilityState, 'hidden')
-        assert.equal(hidden, true)
-        callback()
+      ipcMain.on('pong', function listener (event, visibilityState, hidden) {
+        if (visibilityState === 'hidden' && hidden === true) {
+          ipcMain.removeListener('pong', listener)
+          callback()
+        }
       })
     }
 
